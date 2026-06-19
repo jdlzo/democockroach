@@ -1,0 +1,134 @@
+Descargar
+
+Docker Desktop
+
+verificar en powershell si esta instalado
+
+docker --version
+
+comprobar que no de error nada
+docker ps
+
+descargar la imagen de cockroach
+docker pull cockroachdb/cockroach:latest
+
+crear la carpeta para la practica
+mkdir LabCockroach
+cd LabCockroach
+
+dentro de esa carpeta crear este archivo
+docker-compose.yml
+
+
+dentro de ese archivo copiar este bloque
+version: '3.8'
+
+services:
+  roach1:
+    image: cockroachdb/cockroach:latest
+    container_name: roach1
+    hostname: roach1
+    command: start --insecure --join=roach1,roach2,roach3
+    ports:
+      - "26257:26257"
+      - "8080:8080"
+
+  roach2:
+    image: cockroachdb/cockroach:latest
+    container_name: roach2
+    hostname: roach2
+    command: start --insecure --join=roach1,roach2,roach3
+
+  roach3:
+    image: cockroachdb/cockroach:latest
+    container_name: roach3
+    hostname: roach3
+    command: start --insecure --join=roach1,roach2,roach3
+
+
+iniciar Docker compose
+docker compose up -d
+
+verificar
+docker ps
+
+iniciar el anillo
+docker exec roach1 ./cockroach init --insecure
+
+esta es la pagina web donde también se puede ver el estado de los nodos
+http://localhost:8080
+
+
+Entrar al SQL
+
+docker exec -it roach1 ./cockroach sql --insecure
+
+Crear la base de datos FarmaEC
+
+CREATE DATABASE farmaec;
+USE farmaec;
+
+Crear tabla clientes
+
+CREATE TABLE clientes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cedula STRING,
+    nombre STRING,
+    ciudad STRING,
+    telefono STRING,
+    total_compras DECIMAL
+);
+
+Insertar datos
+
+INSERT INTO clientes
+(cedula,nombre,ciudad,telefono,total_compras)
+VALUES
+('1311111111','Juan Perez','Quito','0991111111',100),
+('1322222222','Maria Lopez','Guayaquil','0992222222',200),
+('1333333333','Carlos Vera','Manta','0993333333',300);
+
+SELECT * FROM clientes;
+
+Ver rangos
+
+SHOW RANGES FROM TABLE clientes;
+
+
+Hacer transacciones
+BEGIN;
+UPDATE clientes
+SET total_compras = total_compras + 50
+WHERE cedula='1311111111';
+COMMIT;
+
+Simular caída de un nodo
+
+Salir de SQL
+
+\q
+
+
+detener uno de los nodos
+docker stop roach3
+
+
+solo deben aparecer dos nodos activos
+docker ps
+
+Comprobar disponibilidad
+
+docker exec -it roach1 ./cockroach sql --insecure
+
+USE farmaec;
+SELECT * FROM clientes;
+INSERT INTO clientes
+(cedula,nombre,ciudad,telefono,total_compras)
+VALUES
+('1344444444','Ana Ruiz','Quito','0994444444',150);
+
+volver a iniciar el nodo
+docker start roach3
+
+comprobar
+docker ps
