@@ -132,3 +132,4 @@ docker start roach3
 
 comprobar
 docker ps
+docker compose down
