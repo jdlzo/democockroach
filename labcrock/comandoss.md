@@ -39,8 +39,10 @@ cd LabCockroach
 
 Crear el archivo:
 
-```
-docker-compose.yml
+```bash
+ni docker-compose.yml
+
+notepad docker-compose.yml
 ```
 
 Copiar el siguiente contenido:
